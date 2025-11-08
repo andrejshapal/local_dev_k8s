@@ -1,9 +1,9 @@
 ---
-- name: Configure k8s
-  hosts: k8s
-  connection: local
-
-  tasks:
+#- name: Configure k8s
+#  hosts: k8s
+#  connection: local
+#
+#  tasks:
 #    - name: Create namespace ArgoCD
 #      kubernetes.core.k8s:
 #        name: argocd
@@ -102,13 +102,23 @@
 #      debug:
 #        var: response.content
 
+- name: Provision zabbix
+  hosts: k8s
+  connection: local
+  vars:
+    TELEGRAM_API_TOKEN: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      64396130363637396333303265356133363637346666626362623330366664386334633635623938
+      6135323861636333363736346365343531313562653930660a323866623036326431343137316262
+      39376262636436613138616633666539386364663835376237613837633938353938363361306232
+      6237656236363639380a646462306236366266393832346434303337336639626233333665393137
+      64313837646334643465393336393836353837653162393539653466653164333137356237646238
+      3331666663666632366164623335343731323266333761363339
+  tasks:
     - name: Set credentials to access Zabbix Server API
       ansible.builtin.set_fact:
         ansible_user: Admin
         ansible_httpapi_pass: zabbix
-
-    - name: Create Zabbix Proxy
-      vars:
         ansible_network_os: community.zabbix.zabbix
         ansible_connection: httpapi
         ansible_httpapi_port: 8080
@@ -116,7 +126,132 @@
         ansible_httpapi_validate_certs: false
         ansible_zabbix_url_path: ""
         ansible_host: localhost
+
+    - name: Create Zabbix Proxy
       community.zabbix.zabbix_proxy:
         proxy_name: zabbix-proxy
         operating_mode: active
+        state: present
+
+    - name: Create host groups
+      community.zabbix.zabbix_group:
+        state: present
+        host_groups:
+          - SNMP Devices
+
+    - name: Create SNMP Hosts
+      community.zabbix.zabbix_host:
+        host_name: host_{{ item }}
+        interfaces:
+          - ip: 127.0.0.1
+            main: 1
+            port: "{{ item }}"
+            type: "snmp"
+            useip: 1
+            details:
+              community: "public"
+        host_groups:
+          - SNMP Devices
+        link_templates:
+          - Linux by SNMP
+        status: enabled
+        state: present
+        monitored_by: proxy
+        proxy: zabbix-proxy
+      loop:
+        - 1161
+        - 1162
+
+    - name: "Provision alert for template SNMP Devices"
+      community.zabbix.zabbix_action:
+        name: "Linux SNMP"
+        event_source: "trigger"
+        state: present
+        status: enabled
+        esc_period: 60
+        conditions:
+          - type: "host_group"
+            operator: "equals"
+            value: "SNMP Devices"
+        operations:
+          - type: send_message
+            media_type: "Telegram"
+            send_to_users:
+              - "Admin"
+
+    - name: "Provision alert for severity critical"
+      community.zabbix.zabbix_action:
+        name: "Critical Alerts"
+        event_source: "trigger"
+        state: present
+        status: enabled
+        esc_period: 60
+        conditions:
+          - type: "trigger_severity"
+            operator: ">="
+            value: "high"
+        operations:
+          - type: send_message
+            media_type: "Telegram"
+            send_to_users:
+              - "Admin"
+
+    - name: "Update Telegram media with webhook"
+      community.zabbix.zabbix_mediatype:
+        name: "Telegram"
+        type: "webhook"
+        webhook_script: "{{ lookup('file', 'telegram.js') }}"
+        webhook_params:
+          - name: event_source
+            value: "{EVENT.SOURCE}"
+          - name: event_value
+            value: "{EVENT.VALUE}"
+          - name: event_nseverity
+            value: "{EVENT.NSEVERITY}"
+          - name: event_severity
+            value: "{EVENT.SEVERITY}"
+          - name: event_update_nseverity
+            value: "{EVENT.UPDATE.NSEVERITY}"
+          - name: event_update_severity
+            value: "{EVENT.UPDATE.SEVERITY}"
+          - name: event_update_status
+            value: "{EVENT.UPDATE.STATUS}"
+          - name: alert_subject
+            value: "{ALERT.SUBJECT}"
+          - name: alert_message
+            value: "{ALERT.MESSAGE}"
+          - name: event_tags
+            value: "{EVENT.TAGSJSON}"
+          - name: api_chat_id
+            value: "{ALERT.SENDTO}"
+          - name: zabbix_url
+            value: "{$ZABBIX.URL}"
+          - name: api_parse_mode
+            value: "markdown"
+          - name: api_token
+            value: "{{ TELEGRAM_API_TOKEN }}"
+        process_tags: true
+        event_menu: false
+
+    - name: Set user media for Admin
+      community.zabbix.zabbix_user:
+        username: Admin
+        name: Zabbix
+        surname: Administrator
+        usrgrps:
+          - Internal
+          - Zabbix administrators
+        passwd: zabbix
+        user_medias:
+          - mediatype: Telegram
+            sendto: "913324586"
+            period: 1-7,00:00-24:00
+            severity:
+              not_classified: false
+              information: true
+              warning: true
+              average: true
+              high: true
+              disaster: true
+            active: true
         state: present
