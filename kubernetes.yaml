@@ -41,63 +41,82 @@
 #        name: argocd-server
 #        state: patched
 
-    - name: Get ArgoCD password
-      kubernetes.core.k8s_info:
-        namespace: argocd
-        kind: Secret
-        name: argocd-initial-admin-secret
-      register: ARGOCD_SECRET
+#    - name: Get ArgoCD password
+#      kubernetes.core.k8s_info:
+#        namespace: argocd
+#        kind: Secret
+#        name: argocd-initial-admin-secret
+#      register: ARGOCD_SECRET
+#
+#    - name: Display ArgoCD password
+#      debug:
+#        msg: "{{ ARGOCD_SECRET.resources[0].data.password | b64decode }}"
+#
+#    - name: Get ArgoCD token
+#      uri:
+#        url: "https://localhost/api/v1/session"
+#        method: POST
+#        headers:
+#          Content-Type: "application/json"
+#        body_format: json
+#        body:
+#          username: admin
+#          password: "{{ ARGOCD_SECRET.resources[0].data.password | b64decode }}"
+#        validate_certs: false
+#      register: ARGOCD_TOKEN
+#
+#    - name: Display ArgoCD token
+#      debug:
+#        var: ARGOCD_TOKEN.json.token
+#
+#    - name: Create ArgoCD main application
+#      uri:
+#        url: "https://localhost/api/v1/applications"
+#        method: POST
+#        headers:
+#          Authorization: "Bearer {{ ARGOCD_TOKEN.json.token }}"
+#          Content-Type: "application/json"
+#        body_format: json
+#        body:
+#          metadata:
+#            name: main
+#            namespace: "argocd"
+#          spec:
+#            project: "default"
+#            source:
+#              repoURL: "https://github.com/andrejshapal/local_dev_k8s.git"
+#              path: "argocd"
+#              targetRevision: "master"
+#            destination:
+#              server: "https://kubernetes.default.svc"
+#              namespace: "default"
+#            syncPolicy:
+#              automated:
+#                prune: true
+#                selfHeal: true
+#        return_content: yes
+#        validate_certs: no
+#      register: response
+#
+#    - name: Display API response
+#      debug:
+#        var: response.content
 
-    - name: Display ArgoCD password
-      debug:
-        msg: "{{ ARGOCD_SECRET.resources[0].data.password | b64decode }}"
+    - name: Set credentials to access Zabbix Server API
+      ansible.builtin.set_fact:
+        ansible_user: Admin
+        ansible_httpapi_pass: zabbix
 
-    - name: Get ArgoCD token
-      uri:
-        url: "https://localhost/api/v1/session"
-        method: POST
-        headers:
-          Content-Type: "application/json"
-        body_format: json
-        body:
-          username: admin
-          password: "{{ ARGOCD_SECRET.resources[0].data.password | b64decode }}"
-        validate_certs: false
-      register: ARGOCD_TOKEN
-
-    - name: Display ArgoCD token
-      debug:
-        var: ARGOCD_TOKEN.json.token
-
-    - name: Create ArgoCD main application
-      uri:
-        url: "https://localhost/api/v1/applications"
-        method: POST
-        headers:
-          Authorization: "Bearer {{ ARGOCD_TOKEN.json.token }}"
-          Content-Type: "application/json"
-        body_format: json
-        body:
-          metadata:
-            name: main
-            namespace: "argocd"
-          spec:
-            project: "default"
-            source:
-              repoURL: "https://github.com/andrejshapal/local_dev_k8s.git"
-              path: "argocd"
-              targetRevision: "master"
-            destination:
-              server: "https://kubernetes.default.svc"
-              namespace: "default"
-            syncPolicy:
-              automated:
-                prune: true
-                selfHeal: true
-        return_content: yes
-        validate_certs: no
-      register: response
-
-    - name: Display API response
-      debug:
-        var: response.content
+    - name: Create Zabbix Proxy
+      vars:
+        ansible_network_os: community.zabbix.zabbix
+        ansible_connection: httpapi
+        ansible_httpapi_port: 8080
+        ansible_httpapi_use_ssl: false
+        ansible_httpapi_validate_certs: false
+        ansible_zabbix_url_path: ""
+        ansible_host: localhost
+      community.zabbix.zabbix_proxy:
+        proxy_name: zabbix-proxy
+        operating_mode: active
+        state: present

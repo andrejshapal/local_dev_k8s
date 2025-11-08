@@ -11,6 +11,7 @@ spec:
     targetRevision: 7.0.12
     helm:
       values: |
+        zabbixImageTag: ubuntu-7.4.5
         zabbixWeb:
           service:
             type: LoadBalancer

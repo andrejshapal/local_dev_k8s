@@ -1,5 +1,15 @@
 ---
-- name: Configure proxy
+- name: Install Proxy
+  hosts: zabbix-proxy
+  vars:
+    ansible_user: root
+    ansible_become: false
+  roles:
+    - role: community.zabbix.zabbix_proxy
+      zabbix_proxy_server: host.docker.internal:8081
+      zabbix_proxy_database: sqlite3
+
+- name: Configure SNMP Simulator
   hosts: proxy
 
   tasks:
@@ -40,16 +50,3 @@
 #      loop:
 #        - 1161
 #        - 1162
-
-    - name: Create Zabbix Proxy
-      vars:
-        ansible_network_os: community.zabbix.zabbix
-        ansible_connection: httpapi
-        ansible_httpapi_port: 8081
-        ansible_httpapi_use_ssl: false
-        ansible_httpapi_validate_certs: false
-        ansible_host: host.docker.internal
-      community.zabbix.zabbix_proxy:
-        proxy_name: SNMPExporter
-        operating_mode: active
-        state: present
