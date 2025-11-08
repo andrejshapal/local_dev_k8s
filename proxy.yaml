@@ -45,11 +45,10 @@
       vars:
         ansible_network_os: community.zabbix.zabbix
         ansible_connection: httpapi
-        ansible_httpapi_port: 443
+        ansible_httpapi_port: 8081
         ansible_httpapi_use_ssl: false
         ansible_httpapi_validate_certs: false
-        ansible_zabbix_url_path: "zabbixeu"
-        ansible_host: zabbix-example-fqdn.org
+        ansible_host: host.docker.internal
       community.zabbix.zabbix_proxy:
         proxy_name: SNMPExporter
         operating_mode: active

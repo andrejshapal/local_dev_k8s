@@ -19,6 +19,8 @@ spec:
           service:
             type: LoadBalancer
             port: 8081
+        zabbixAgent:
+          ZBX_ACTIVE_ALLOW: true
   destination:
     server: https://kubernetes.default.svc
     namespace: zabbix
