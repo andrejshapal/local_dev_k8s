@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: zabbix
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: https://zabbix-community.github.io/helm-zabbix
+    helm:
+      values: |
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: zabbix
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+    syncOptions:
+    - CreateNamespace=true
