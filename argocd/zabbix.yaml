@@ -6,7 +6,8 @@ metadata:
 spec:
   project: default
   source:
-    chart: https://zabbix-community.github.io/helm-zabbix
+    repoURL: https://zabbix-community.github.io/helm-zabbix
+    chart: zabbix-community/zabbix
     helm:
       values: |
   destination:
