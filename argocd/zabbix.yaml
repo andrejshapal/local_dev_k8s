@@ -21,7 +21,8 @@ spec:
             port: 8081
         zabbixAgent:
           ZBX_ACTIVE_ALLOW: true
-          ZBX_SERVER_HOST: 0.0.0.0
+          ZBX_SERVER_HOST: zabbix-zabbix-server
+          ZBX_ACTIVESERVERS: ''
   destination:
     server: https://kubernetes.default.svc
     namespace: zabbix
