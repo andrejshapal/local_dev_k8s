@@ -1,0 +1,56 @@
+---
+- name: Configure proxy
+  hosts: proxy
+
+  tasks:
+#    - name: Install snmpsim
+#      ansible.builtin.pip:
+#        name: snmpsim
+#
+#    - name: Ensure /tmp/data dir exists
+#      file:
+#        path: /tmp/data
+#        state: directory
+#
+#    - name: Copy test data
+#      ansible.builtin.copy:
+#        src: public.snmprec
+#        dest: /tmp/data/public.snmprec
+#
+#    - name: Stop snmpsim if running
+#      ansible.builtin.shell: |
+#        if [ -f /tmp/snmpsim_{{ item }}.pid ] && kill -0 $(cat /tmp/snmpsim_{{ item }}.pid) 2>/dev/null; then
+#          kill $(cat /tmp/snmpsim_{{ item }}.pid)
+#          rm -f /tmp/snmpsim_{{ item }}.pid
+#        fi
+#      loop:
+#        - 1161
+#        - 1162
+#
+#    - name: Run snmpsim instances
+#      ansible.builtin.command: >
+#        snmpsim-command-responder
+#        --data-dir=/tmp/data
+#        --agent-udpv4-endpoint=127.0.0.1:{{ item }}
+#        --process-user=nobody
+#        --process-group=nogroup
+#        --pid-file=/tmp/snmpsim_{{ item }}.pid
+#        --logging-method=file:/tmp/snmpsim_{{ item }}.log
+#        --daemonize
+#      loop:
+#        - 1161
+#        - 1162
+
+    - name: Create Zabbix Proxy
+      vars:
+        ansible_network_os: community.zabbix.zabbix
+        ansible_connection: httpapi
+        ansible_httpapi_port: 443
+        ansible_httpapi_use_ssl: false
+        ansible_httpapi_validate_certs: false
+        ansible_zabbix_url_path: "zabbixeu"
+        ansible_host: zabbix-example-fqdn.org
+      community.zabbix.zabbix_proxy:
+        proxy_name: SNMPExporter
+        operating_mode: active
+        state: present
