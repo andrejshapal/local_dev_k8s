@@ -46,11 +46,11 @@
         namespace: argocd
         kind: Secret
         name: argocd-initial-admin-secret
-      register: secret
+      register: ARGOCD_SECRET
 
     - name: Display ArgoCD password
       debug:
-        msg: "{{ secret.resources[0].data.password | b64decode }}"
+        msg: "{{ ARGOCD_SECRET.resources[0].data.password | b64decode }}"
 
     - name: Get ArgoCD token
       uri:
@@ -61,53 +61,53 @@
         body_format: json
         body:
           username: admin
-          password: "{{ secret.resources[0].data.password | b64decode }}"
+          password: "{{ ARGOCD_SECRET.resources[0].data.password | b64decode }}"
         validate_certs: false
-      register: token
+      register: ARGOCD_TOKEN
 
     - name: Display ArgoCD token
       debug:
-        var: token
+        var: ARGOCD_TOKEN
 
-#    - name: Create ArgoCD application
-#      uri:
-#        url: "http://localhost/api/v1/applications"
-#        method: POST
-#        headers:
-#          Authorization: "Bearer {{ ARGOCD_TOKEN }}"
-#          Content-Type: "application/json"
-#        body_format: json
-#        body:
-#          metadata:
-#            name: "{{ APP_NAME }}"
-#            namespace: "argocd"
-#          spec:
-#            project: "default"
-#            source:
-#              repoURL: "https://{{ ARGOCD_HELM_REPO }}/stash/scm/do/helm.git"
-#              path: "vault-secrets-webhook"
-#              targetRevision: "master"
-#              helm:
-#                parameters:
-#                  - name: "replicaCount"
-#                    value: "1"
-#                  - name: "env.VAULT_IMAGE"
-#                    value: "vault:1.11.11"
-#                  - name: "resources.limits.memory"
-#                    value: "256Mi"
-#                  - name: "resources.limits.cpu"
-#                    value: "250m"
-#            destination:
-#              server: "https://kubernetes.default.svc"
-#              namespace: "test-app-yaml"
-#            syncPolicy:
-#              automated:
-#                prune: true
-#                selfHeal: true
-#        return_content: yes
-#        validate_certs: no
-#      register: response
-#
-#    - name: Display API response
-#      debug:
-#        var: response.content
+    - name: Create ArgoCD main application
+      uri:
+        url: "https://localhost/api/v1/applications"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ ARGOCD_TOKEN }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          metadata:
+            name: main
+            namespace: "argocd"
+          spec:
+            project: "default"
+            source:
+              repoURL: "https://github.com/andrejshapal/local_dev_k8s.git"
+              path: "vault-secrets-webhook"
+              targetRevision: "master"
+              helm:
+                parameters:
+                  - name: "replicaCount"
+                    value: "1"
+                  - name: "env.VAULT_IMAGE"
+                    value: "vault:1.11.11"
+                  - name: "resources.limits.memory"
+                    value: "256Mi"
+                  - name: "resources.limits.cpu"
+                    value: "250m"
+            destination:
+              server: "https://kubernetes.default.svc"
+              namespace: "test-app-yaml"
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true
+        return_content: yes
+        validate_certs: no
+      register: response
+
+    - name: Display API response
+      debug:
+        var: response.content
