@@ -1,16 +1,16 @@
 ---
-#- name: Install Proxy
-#  hosts: zabbix-proxy
-#  vars:
-#    ansible_user: root
-#    ansible_become: false
-#  roles:
-#    - role: community.zabbix.zabbix_proxy
-#      zabbix_proxy_server: host.docker.internal:8081
-#      zabbix_proxy_database: sqlite3
-#      zabbix_proxy_dbname: /var/lib/zabbix/db/sqlite3.db
-#      zabbix_proxy_pidfile: /var/run/zabbix/zabbix_proxy.pid
-#      zabbix_proxy_debuglevel: 4
+- name: Install Proxy
+  hosts: zabbix-proxy
+  vars:
+    ansible_user: root
+    ansible_become: false
+  roles:
+    - role: community.zabbix.zabbix_proxy
+      zabbix_proxy_server: host.docker.internal:8081
+      zabbix_proxy_database: sqlite3
+      zabbix_proxy_dbname: /var/lib/zabbix/db/sqlite3.db
+      zabbix_proxy_pidfile: /var/run/zabbix/zabbix_proxy.pid
+      zabbix_proxy_debuglevel: 4
 
 - name: Configure SNMP Simulator
   hosts: proxy
