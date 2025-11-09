@@ -1,5 +1,5 @@
 # Automated k8s setup for local testing
-## Preparation
+## Installation
 1. Install docker (https://docs.docker.com/desktop/setup/install/mac-install/)
 2. Install minikube and kubectl (https://minikube.sigs.k8s.io/docs/start/?arch=%2Fmacos%2Farm64%2Fstable%2Fbinary+download)
 3. Clone repo to local system
